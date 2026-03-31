@@ -13,10 +13,11 @@ import ffmpeg
 
 import torchaudio
 import torch.nn as nn
-import torchaudio
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from sklearn.metrics import confusion_matrix
+
+
 
 
 # %%
@@ -60,7 +61,7 @@ class CommandDataset(Dataset):
             Tuple[torch.Tensor, int]: A tuple containing the Mel-spectrogram tensor and its label.
         """
         # Load the sample 
-        waveform, sample_rate = torchaudio.load(self.file_paths[index])
+        waveform, sample_rate = torchaudio.load(self.file_paths[index], backend="soundfile")
 
         # If there are more channels lets average them 
         if waveform.shape[0] > 1:
@@ -420,7 +421,7 @@ def plot_confusion_matrix(
 # %%
 # Config
 # Path to the dir where .wav files are stored 
-DATA_DIR = "processed" 
+DATA_DIR = "data\processed\processed" 
 BATCH_SIZE = 32
 LEARNING_RATE = 1e-3  
 NUM_EPOCHS = 20
