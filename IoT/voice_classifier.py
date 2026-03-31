@@ -9,7 +9,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import math
+import ffmpeg
 
+import torchaudio
 import torch.nn as nn
 import torchaudio
 import torch.nn.functional as F
@@ -418,7 +420,7 @@ def plot_confusion_matrix(
 # %%
 # Config
 # Path to the dir where .wav files are stored 
-DATA_DIR = "Studies_AI_3_Term\IoT\processed" 
+DATA_DIR = "processed" 
 BATCH_SIZE = 32
 LEARNING_RATE = 1e-3  
 NUM_EPOCHS = 20
