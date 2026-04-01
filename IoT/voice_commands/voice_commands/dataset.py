@@ -103,50 +103,59 @@ class CommandDataset(Dataset):
     
 
 
-def parse_audio_directory(directory_path: str) -> tuple[list[str], list[int], dict[str, int]]:
+def parse_audio_directory(directory_paths) -> tuple[list[str], list[int], dict[str, int]]:
     """
     Parses a directory of .wav files, extracting file paths and mapping text command to integer labels
 
     Formatt of the files: {microphone}_{author}_{command}_{sample_number}.wav
     """
+    # If only one folder was given lets convert it to a list
+    if not isinstance(directory_paths, list):
+        directory_paths = [directory_paths]
+
     file_paths = []
     text_commands = []
     metadata = []
 
-    path_obj = Path(directory_path)
+    for directory_path in directory_paths:
 
-    # Iterate through directory
-    for file_path in path_obj.rglob("*.wav"):
-        file_name = file_path.name
-        name_without_ext = file_name.replace(".wav", "")
-        
-        # Split by _
-        parts = name_without_ext.split("_")
+        path_obj = Path(directory_path)
 
-        # Extracting data by using list indexing
-        try:
-            # Microphone is the first item
-            microphone = parts[0] 
+        if not path_obj.exists():
+            continue
 
-            # Sample number is always the last item
-            sample_number = int(parts[-1])
+        # Iterate through directory
+        for file_path in path_obj.rglob("*.wav"):
+            file_name = file_path.name
+            name_without_ext = file_name.replace(".wav", "")
+            
+            # Split by _
+            parts = name_without_ext.split("_")
 
-            command = parts[-2].lower()
+            # Extracting data by using list indexing
+            try:
+                # Microphone is the first item
+                microphone = parts[0] 
 
-            author = parts[1]
+                # Sample number is always the last item
+                sample_number = int(parts[-1])
 
-            # Store the extracted data
-            file_paths.append(str(file_path))
-            text_commands.append(command)
+                command = parts[-2].lower()
 
-            metadata.append({
-                "microphone": microphone,
-                "author": author,
-                "command": command,
-                "sample_number": sample_number
-            })
-        except (IndexError, ValueError):
-            print(f"Warning file {file_name} does not match with name conventtion ")
+                author = parts[1]
+
+                # Store the extracted data
+                file_paths.append(str(file_path))
+                text_commands.append(command)
+
+                metadata.append({
+                    "microphone": microphone,
+                    "author": author,
+                    "command": command,
+                    "sample_number": sample_number
+                })
+            except (IndexError, ValueError):
+                print(f"Warning file {file_name} does not match with name conventtion ")
 
     # Create a mapping of the commands to int
     unique_commands = sorted(list(set(text_commands)))
@@ -159,3 +168,30 @@ def parse_audio_directory(directory_path: str) -> tuple[list[str], list[int], di
     print(f"Identified {len(label_mapping)} unique_commands: {label_mapping}")
 
     return file_paths, integer_labels, metadata, label_mapping
+
+
+def add_prefix_to_files(folder_path: str, prefix:str) -> None:
+    """
+    Function iterates through all files in given folder and add prefix to its name
+    """
+    target_dir = Path(folder_path)
+
+    # Checking if folder actually exsits
+    if not target_dir.exists() or not target_dir.is_dir():
+        print(f"There is no path: {folder_path} or its not a folder")
+        return
+    
+    for file_path in target_dir.iterdir():
+
+        # We wanna add prefix only for files so we have to check its not a directory or sth else
+        if file_path.is_file():
+
+            # We create new name 
+            new_name = prefix + file_path.name
+
+            # We build new path
+            new_path = file_path.with_name(new_name)
+
+            # we have to physically change the name of the file
+            file_path.rename(new_path)
+            
