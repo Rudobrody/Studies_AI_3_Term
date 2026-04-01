@@ -1,0 +1,18 @@
+# W cmd wpisać ipconfig
+# połączyć się przez: ssh nvidia@10.20.9.4
+# haslo: nvidia
+# uruchamiamy docker przez polecenie: 
+
+sudo docker run --runtime nvidia -it --rm --network host \
+ --volume ~/nvdli-data:/nvdli-nano/data \
+ --volume /tmp/argus_socket:/tmp/argus_socket \
+ --device /dev/video0 \
+ nvcr.io/nvidia/dli/dli-nano-ai:v2.0.2-r32.7.1
+
+# Wyswietli się adres który skopiowac i wpisać w przegladarce 
+
+http://10.20.9.4:8888
+
+haslo to dlinano
+
+Potem można odpalić przykładowe skrypty
