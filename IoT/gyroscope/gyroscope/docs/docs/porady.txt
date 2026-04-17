@@ -1,0 +1,4 @@
+autotransformera użyć jako autoenkodera czyli enkoder dekoder, najlepiej skorzystać z Seq2Seq do tego odszumiania sygnału. Można spróbować podejścia nienadzorowanego tak jak wyżej opisany czyli trenujemy tylko na dobrych przykładach albo może spróbowac nadozorowanego. 
+
+Możemy też przyjąć podejście, że z danego okna przeliczamy jakieś analityczne, statystyczne dane albo ewentualnie możemy je dorzucić do danych wejściowych. 
+
