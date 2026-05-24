@@ -1,32 +1,3 @@
-# from pathlib import Path
-
-# from loguru import logger
-# from tqdm import tqdm
-# import typer
-
-# from voice_commands.config import PROCESSED_DATA_DIR, RAW_DATA_DIR
-
-# app = typer.Typer()
-
-
-# @app.command()
-# def main(
-#     # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
-#     input_path: Path = RAW_DATA_DIR / "dataset.csv",
-#     output_path: Path = PROCESSED_DATA_DIR / "dataset.csv",
-#     # ----------------------------------------------
-# ):
-#     # ---- REPLACE THIS WITH YOUR OWN CODE ----
-#     logger.info("Processing dataset...")
-#     for i in tqdm(range(10), total=10):
-#         if i == 5:
-#             logger.info("Something happened for iteration 5.")
-#     logger.success("Processing dataset complete.")
-#     # -----------------------------------------
-
-
-# if __name__ == "__main__":
-#     app()
 import torchaudio
 import torch
 import torch.nn.functional as F
@@ -42,11 +13,13 @@ class CommandDataset(Dataset):
         file_paths (List[str]): List of absolute paths to the audio files.
         labels (List[int]): List of integer command labels.
         target_sample_rate (int): The sample rate to which all audio will be converted.
+        augment (bool): Whether to apply data augmentation (SpecAugment) to the spectrograms.
     """
-    def __init__(self, file_paths: list[str], labels: list[int], target_sample_rate: int = 16000):
+    def __init__(self, file_paths: list[str], labels: list[int], target_sample_rate: int = 16000, augment: bool = False):
         self.file_paths = file_paths
         self.labels = labels
         self.target_sample_rate = target_sample_rate
+        self.augment = augment
 
         self.transformation = torchaudio.transforms.MelSpectrogram(
             sample_rate=self.target_sample_rate, 
@@ -54,6 +27,14 @@ class CommandDataset(Dataset):
             n_fft=1024, 
             hop_length=512 # Hop length is like a stride for audio
         )
+        
+        self.amplitude_to_db = torchaudio.transforms.AmplitudeToDB(stype='power', top_db=80)
+        
+        if self.augment:
+            # freq_mask_param means cutting max 15 of 64 channels (max ~23%)
+            self.freq_masking = torchaudio.transforms.FrequencyMasking(freq_mask_param=15)
+            # time_mask_param means cutting max 15 time steps 
+            self.time_masking = torchaudio.transforms.TimeMasking(time_mask_param=15)
 
 
     def __len__(self) -> int:
@@ -84,20 +65,49 @@ class CommandDataset(Dataset):
             resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=self.target_sample_rate)
             waveform = resampler(waveform)
 
-        # Standarize the length, so we set as one second so 32 000
-        num_samples = self.target_sample_rate * 2
+        # Standarize the length, so we set as one second so 16 000
+        num_samples = self.target_sample_rate
         
         # If the sample of the audio is longer than 1 sec so we trim
         if waveform.shape[1] > num_samples:
-            waveform[:, :num_samples] 
+            waveform = waveform[:, :num_samples] 
         
         # If it is shorter we add some zeros
         elif waveform.shape[1] < num_samples:
             pad_amount = num_samples - waveform.shape[1]
-            waveform = F.pad(waveform, (0, pad_amount)) # why (0, pad amount?) because it is padding (left, right), we don't
+            waveform = F.pad(waveform, (0, pad_amount)) # why (0, pad amount?) because it is padding (left, right)
+
+        # Waveform augmentations before we make mel spectrogram 
+        if self.augment:
+            # Adding  Random White Noise which simulates background or bad microphone 
+            # We use small amplitude
+            noise_level = torch.empty(1).uniform_(0.001, 0.02).item()
+            noise = torch.randn_like(waveform) * noise_level
+            waveform = waveform + noise
+
+            # Random Gain which simulates different distance from the microphone
+            # From 70% to 130% of volume
+            gain = torch.empty(1).uniform_(0.7, 1.3).item()
+            waveform = waveform * gain
+            
+            # Clipping values to range [-1.0, 1.0], to avoid sizzle sounds
+            waveform = torch.clamp(waveform, min=-1.0, max=1.0)
 
         # Aplying trasnformation 
         mel_spec = self.transformation(waveform)
+        
+        # Changing regular spectrogram to LOG Spectrogram 
+        mel_spec = self.amplitude_to_db(mel_spec)
+        
+        # Standarization per sample
+        mean = mel_spec.mean()
+        std = mel_spec.std() + 1e-8
+        mel_spec = (mel_spec - mean) / std
+
+        # Spectrogrma augmentations (only if augment=True)
+        if self.augment:
+            mel_spec = self.freq_masking(mel_spec)
+            mel_spec = self.time_masking(mel_spec)
 
         return mel_spec, self.labels[index]
     

@@ -36,9 +36,21 @@ import torch
 import torch.nn as nn
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
+from pathlib import Path
+import os
+
+from voice_commands.config import FIGURES_DIR
+
+def _get_save_path(title: str) -> Path:
+    """Bezpieczne generowanie ścieżki: tworzy foldery i zapewnia rozszerzenie .png"""
+    FIGURES_DIR.mkdir(parents=True, exist_ok=True)
+    filename = os.path.basename(title) # Ignoruje wcześniejsze ścieżki (np. "reports/figures/...")
+    if not filename.endswith('.png'):
+        filename += '.png'
+    return FIGURES_DIR / filename
 
 
-def plot_training_history(history: dict[str, list[float]], title="reports/figures/loss_acc_our_voices") -> None:
+def plot_training_history(history: dict[str, list[float]], title="loss_acc_our_voices") -> None:
     """Plots the training and validation loss and accuracy curves."""
     epochs = range(1, len(history["train_loss"]) + 1)
 
@@ -65,11 +77,11 @@ def plot_training_history(history: dict[str, list[float]], title="reports/figure
     plt.grid(True)
 
     plt.tight_layout()
-    plt.savefig(title)
-    plt.show()
+    plt.savefig(_get_save_path(title))
+    plt.close()
 
 
-def visualize_mel_spectrogram(dataset: Dataset, index: int = 0, label_mapping: dict = None, title="reports/figures/mel_spectrogram_our_voices") -> None:
+def visualize_mel_spectrogram(dataset: Dataset, index: int = 0, label_mapping: dict = None, title="mel_spectrogram_our_voices") -> None:
     """
     Pulls a specific audio sample of each class from the dataset, converts the raw Mel-spectrogram 
     power to a logarithmic Decibel (dB) scale, and plots it.
@@ -105,12 +117,15 @@ def visualize_mel_spectrogram(dataset: Dataset, index: int = 0, label_mapping: d
         ax = axes[i]
         
         if i < num_classes:
-            # We have a class for this grid square
-            mel_spec = examples[i].squeeze().numpy()
-            mel_spec_db = 10 * np.log10(mel_spec + 1e-9)
-            
-            ax.imshow(mel_spec_db, origin='lower', aspect='auto', cmap='magma')
-            ax.set_title(f"ID: {i} | {id_to_name[i]}", fontsize=10)
+            if i in examples:
+                # We have a class for this grid square
+                mel_spec = examples[i].squeeze().numpy()
+                mel_spec_db = 10 * np.log10(mel_spec + 1e-9)
+                
+                ax.imshow(mel_spec_db, origin='lower', aspect='auto', cmap='magma')
+                ax.set_title(f"ID: {i} | {id_to_name[i]}", fontsize=10)
+            else:
+                ax.set_title(f"ID: {i} | {id_to_name[i]}\n(Brak danych)", fontsize=10)
             
             ax.set_xticks([])
             ax.set_yticks([])
@@ -119,8 +134,8 @@ def visualize_mel_spectrogram(dataset: Dataset, index: int = 0, label_mapping: d
             ax.axis('off')
 
     plt.tight_layout()
-    plt.savefig(title)
-    plt.show()
+    plt.savefig(_get_save_path(title))
+    plt.close()
 
 
 def plot_confusion_matrix(
@@ -128,7 +143,7 @@ def plot_confusion_matrix(
     val_loader: DataLoader, 
     device: torch.device, 
     label_mapping: dict[str, int],
-    title="reports/figures/confusion_matrix_our_voices"
+    title="confusion_matrix_our_voices"
 ) -> None:
     """Evaluates the model and plots a confusion matrix heatmap."""
     model.eval()
@@ -161,6 +176,5 @@ def plot_confusion_matrix(
     plt.ylabel('True Command')
     plt.xticks(rotation=45, ha='right')
     plt.tight_layout()
-    plt.savefig(title)
-    plt.show()
-
+    plt.savefig(_get_save_path(title))
+    plt.close()

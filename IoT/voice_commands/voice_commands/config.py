@@ -10,6 +10,7 @@ PROCESSED_2ND_DATA_DIR = DATA_DIR / "processed" / "processed_2nd_group"
 EXTERNAL_DATA_DIR = DATA_DIR / "external"
 
 MODELS_DIR = PROJ_ROOT / "models"
+ONNX_DIR = MODELS_DIR / "onnx_dir" 
 
 REPORTS_DIR = PROJ_ROOT / "reports"
 FIGURES_DIR = REPORTS_DIR / "figures"
@@ -19,5 +20,5 @@ FIGURES_DIR = REPORTS_DIR / "figures"
 # Hyperparameters
 BATCH_SIZE = 32
 LEARNING_RATE = 1e-3  
-NUM_EPOCHS = 20
+NUM_EPOCHS = 30
 TARGET_SAMPLE_RATE = 16000

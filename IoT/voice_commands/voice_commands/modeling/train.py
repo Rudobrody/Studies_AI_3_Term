@@ -42,7 +42,8 @@ def train_model(
         optimizer: torch.optim.Optimizer,
         num_epochs: int,
         device: torch.device,
-        save_path: str = Path.joinpath(MODELS_DIR,"best_audio_model.pth")
+        save_path: str = Path.joinpath(MODELS_DIR,"best_audio_model.pth"),
+        scheduler = None
 ) -> None:
     """
     Executes the training and validation loop for the neural network
@@ -106,9 +107,16 @@ def train_model(
         val_loss = val_running_loss / len(val_loader)
         val_acc = (val_correct / val_total) * 100
 
+        # Current Learning Rate tracking (takes LR from the classifier group)
+        current_lr = optimizer.param_groups[-1]['lr']
+
         print(f"Epoch [{epoch+1}/{num_epochs}] "
               f"| Train Loss: {train_loss:.4f} | Train Acc: {train_acc:.2f}% "
-              f"| Val Loss: {val_loss:.4f} | Val Acc: {val_acc:.2f}%")
+              f"| Val Loss: {val_loss:.4f} | Val Acc: {val_acc:.2f}% "
+              f"| LR: {current_lr:.6f}")
+
+        if scheduler is not None:
+            scheduler.step(val_acc)
 
         # If the model improved, save the state dictionary
         if val_acc > best_val_accuracy:

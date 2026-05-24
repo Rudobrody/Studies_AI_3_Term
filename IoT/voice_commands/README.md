@@ -15,10 +15,15 @@ A classifier of voice commands
 ├── data
 │   ├── external       <- Data from third party sources.
 │   ├── interim        <- Intermediate data that has been transformed.
-│   ├── processed      <- The final, canonical data sets for modeling.
+│   ├── processed      <- Folder with final processed data
+        └── Głos - komendy          <- 
+        ├── processed               <- Final Splitted files of the first group 
+        |── processed_2nd_group     <- Final Splitted files of the second group
+
 │   └── raw            <- The original, immutable data dump.
 │
 ├── docs               <- A default mkdocs project; see www.mkdocs.org for details
+    |-- journal        <- A journal of project
 │
 ├── models             <- Trained and serialized models, model predictions, or model summaries
 │
@@ -51,6 +56,7 @@ A classifier of voice commands
     │
     ├── modeling                
     │   ├── __init__.py 
+    │   ├── architecture.py     <- Architecture of CNN and MobileNetV3 
     │   ├── predict.py          <- Code to run model inference with trained models          
     │   └── train.py            <- Code to train models
     │

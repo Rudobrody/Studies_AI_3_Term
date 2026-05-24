@@ -72,12 +72,12 @@
 #             resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=self.target_sample_rate)
 #             waveform = resampler(waveform)
 
-#         # Standarize the length, so we set as one second so 32 000
-#         num_samples = self.target_sample_rate * 2
+#         # Standarize the length, so we set as one second so 16 000
+#         num_samples = self.target_sample_rate
         
 #         # If the sample of the audio is longer than 1 sec so we trim
 #         if waveform.shape[1] > num_samples:
-#             waveform[:, :num_samples] 
+#             waveform = waveform[:, :num_samples] 
         
 #         # If it is shorter we add some zeros
 #         elif waveform.shape[1] < num_samples:
